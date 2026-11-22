@@ -1,0 +1,25 @@
+# HBase commands used in the project (run in the master container)
+
+# --- create the table before running Spark ---
+hbase shell
+create 'shipment_model_metrics', 'metrics', 'run_info'
+list
+describe 'shipment_model_metrics'
+scan 'shipment_model_metrics'        # empty scan, should show 0 row(s)
+exit
+
+# --- start the Thrift server so happybase can connect (port 9090) ---
+nohup hbase thrift start > /tmp/hbase-thrift.log 2>&1 &
+jps | grep -i thrift
+tail -n 20 /tmp/hbase-thrift.log
+
+# --- after spark-submit finishes ---
+hbase shell
+scan 'shipment_model_metrics'                                    # should show 2 row(s)
+scan 'shipment_model_metrics', {COLUMNS => 'metrics'}            # just the scores
+scan 'shipment_model_metrics', {ROWPREFIXFILTER => 'random_forest'}
+count 'shipment_model_metrics'
+exit
+
+# --- clear the table between test runs if needed ---
+# truncate 'shipment_model_metrics'
