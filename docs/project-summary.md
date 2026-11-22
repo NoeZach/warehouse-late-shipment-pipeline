@@ -51,7 +51,9 @@ Every stage of the pipeline ran from start to finish. NiFi downloaded the CSV an
 
 ## Results
 
-The data made it all the way from a GitHub file to an HBase table, and each step was checked along the way with an HDFS listing, a Hive count, the Spark output and an HBase scan. Both models were evaluated on the same test set, and the full metrics, confusion matrices and feature importances are in the [Spark README](../spark/README.md) screenshots and in the HBase scan.
+The data made it all the way from a GitHub file to an HBase table, and each step was checked along the way with an HDFS listing, a Hive count, the Spark output and an HBase scan.
+
+On the 853-row test set, Random Forest had an accuracy of 0.788, a weighted F1 of 0.786 and a ROC AUC of 0.814. Logistic Regression had an accuracy of 0.746 and a slightly higher ROC AUC of 0.826. Random Forest was more precise when it flagged an order as late (0.64 vs 0.54), while Logistic Regression caught more of the late orders (0.74 vs 0.60 recall). So Random Forest is the better choice if you want fewer false alarms, and Logistic Regression is better if catching every late order matters more. The most important feature was `miles_per_promised_day`, one of the features I added, followed by distance and promised days, which matches the Hive aggregations showing tight promises on long routes as the main cause of late orders. More detail is in the [Spark README](../spark/README.md).
 
 ## Lessons Learned
 

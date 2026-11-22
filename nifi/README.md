@@ -44,6 +44,8 @@ After the file landed in HDFS, I stopped NiFi to free up memory on the VM before
 
 ![NiFi Running](screenshots/nifi-running.png)
 
+This screenshot was taken after a second test run of Download File. The file was already in HDFS from the first run, so PutHDFS rejected the duplicate and sent it to the failure queue (that's the `1 (235.46 KB)` shown there). This is the "fail" conflict setting doing its job, since it keeps the file in HDFS from being overwritten. After this I switched to Run Once only.
+
 ### HDFS verification
 
 ![HDFS Verification](screenshots/hdfs-ingestion-verification.png)

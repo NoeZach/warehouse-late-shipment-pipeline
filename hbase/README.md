@@ -46,6 +46,6 @@ Each run writes two rows, one for `logistic_regression` and one for `random_fore
 
 ## Populated Scan
 
-After the Spark job finished, scanning the table showed two rows with all the metrics and run info filled in, and the values match what Spark printed. Since `run_info:hive_table` points to `warehouse_orders` and the train and test row counts add up to the 3,000 rows loaded into Hive, this scan connects the final result back through every step of the pipeline.
+After the Spark job finished, scanning the table showed two rows, `logistic_regression_20261123034228` and `random_forest_20261123034228`, with all the metrics and run info filled in. The values match what Spark printed, for example `metrics:accuracy` is 0.7878 for Random Forest and 0.7456 for Logistic Regression, and the Random Forest row's `run_info:top_features` lists `miles_per_promised_day`, `distance_miles` and `promised_days`. Since `run_info:hive_table` points to `warehouse_orders` and the train and test row counts (2,147 + 853) add up to the 3,000 rows loaded into Hive, this scan connects the final result back through every step of the pipeline.
 
 ![Populated HBase Scan](screenshots/hbase-populated-scan.png)

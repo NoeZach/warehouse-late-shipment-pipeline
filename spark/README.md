@@ -40,6 +40,26 @@ Both models are scored on the 30% test set using:
 
 I added late precision and late recall because accuracy alone can look good even if the model misses most late orders. The job also prints a confusion matrix for each model and the top Random Forest features.
 
+## Results
+
+The data split into 2,147 training rows and 853 test rows.
+
+| Metric | Logistic Regression | Random Forest |
+|---|---|---|
+| Accuracy | 0.7456 | **0.7878** |
+| F1 (weighted) | 0.7554 | **0.7857** |
+| Weighted precision | 0.7818 | **0.7842** |
+| Weighted recall | 0.7456 | **0.7878** |
+| Late precision | 0.5389 | **0.6360** |
+| Late recall | **0.7407** | 0.5967 |
+| ROC AUC | **0.8260** | 0.8136 |
+
+Random Forest was the better model overall. It got about 79% of the test orders right, compared to about 75% for Logistic Regression, and when it flagged an order as late it was right 64% of the time compared to 54%. Its confusion matrix shows 527 on-time orders and 145 late orders predicted correctly, with 83 false alarms and 98 late orders missed. Logistic Regression, on the other hand, caught 180 of the 243 late orders but had 154 false alarms.
+
+Logistic Regression did win on two metrics, though. It caught 74% of the late orders compared to 60% for Random Forest, and its ROC AUC was slightly higher (0.826 vs 0.814), so both models are about equally good at ranking risky orders above safe ones. The difference is that Logistic Regression flags a lot more orders as late to get that extra recall. In a warehouse, that's a real choice: if missing a late order is expensive (like a big customer with penalties), the model that catches more of them might be worth the extra false alarms, but if the team only has time to follow up on a handful of orders, Random Forest's alerts are more trustworthy.
+
+The top Random Forest features were `miles_per_promised_day` (0.258), `distance_miles` (0.127), `promised_days` (0.057), `order_month` (0.057) and `pick_minutes` (0.043). So the biggest driver of late orders was how tight the delivery promise was for the distance, which lines up with what the Hive queries showed. It was also nice to see that one of the features I created ended up being the most important one.
+
 ### Training output
 
 ![Spark Training Output](screenshots/spark-training-output.png)
@@ -60,7 +80,7 @@ spark-submit \
   analysis.py
 ```
 
-`--master yarn` sends the job to YARN, which runs the executors on the worker containers. Client mode keeps the driver on the master container, so the output prints in my terminal. `--py-files processing.py` sends my helper file to the executors, since otherwise they can't import it.
+`--master yarn` sends the job to YARN, which runs the executors on the worker containers. Client mode keeps the driver on the master container, so the output prints in my terminal. `--py-files processing.py` sends my helper file to the executors, since otherwise they can't import it. The whole job, including training both models and writing to HBase, finished in about 90 seconds. In the output you can see YARN accept the job as `application_1795372497430_0007`, and you can see `processing.py` being uploaded to the job's staging folder in HDFS, which is how `--py-files` gets it to the executors.
 
 ![Spark Submit Output](screenshots/spark-submit-output.png)
 
