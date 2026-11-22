@@ -39,13 +39,15 @@ Every stage of the pipeline ran from start to finish. NiFi downloaded the CSV an
 
 ## Issues and Challenges
 
+**NiFi couldn't download the file at first.** Download File ran without errors, but nothing came out of it and every queue stayed at 0. I could open the raw file in my browser, but `curl` from the VM returned a 404, and I noticed the browser URL had `?token=` on the end. My repo was private, so GitHub only showed the file to my logged-in browser. After I made the repo public, `curl` returned 200 and NiFi downloaded the file right away.
+
 **The CSV header showed up in Spark.** Hive's row count was 3,000, but Spark found one extra row with `order_id` set to the text `order_id` and nulls everywhere else. After comparing the counts and looking at that row, I figured out that Spark doesn't use Hive's `skip.header.line.count` setting, even though Hive does. I kept the setting for Hive and added a filter in `processing.py` to drop the header row. The takeaway for me was that two tools sharing the same table don't always read it the same way, so it's worth checking counts in each one.
 
 **The first models barely caught any late orders.** Before I added class weights, both models had decent accuracy but missed most of the late orders. Since only about a third of the orders are late, predicting "on time" for almost everything still looks pretty accurate. The confusion matrices made this obvious, so I added a weight column that gives late orders more importance during training. That's also why I report late precision and late recall, not just accuracy.
 
 **LOAD DATA moved the file.** After loading Hive, `/project/raw` was empty, and at first I thought the NiFi file got lost. It turns out `LOAD DATA INPATH` moves the file into Hive's warehouse folder instead of copying it. So I had to take the HDFS screenshot before running the Hive load.
 
-**NiFi kept downloading the file.** The template runs InvokeHTTP every 60 seconds, and PutHDFS fails if the file already exists, so the second download ended up in the failure queue. I switched to Run Once so only one copy was written, and then stopped NiFi before moving on, since the VM doesn't have enough memory to run everything at once.
+**A second download went to the failure queue.** When I ran Download File again to get a screenshot of the queue, PutHDFS was still running and tried to write the file a second time. Since it's set to fail if the file already exists, the duplicate ended up in the failure queue. I switched to Run Once so only one copy was written, and then stopped NiFi before moving on, since the VM doesn't have enough memory to run everything at once.
 
 **The executors couldn't find my helper file.** Splitting the code into two files meant the workers needed `processing.py` too. Adding `--py-files processing.py` to `spark-submit` fixed it.
 
